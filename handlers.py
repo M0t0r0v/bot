@@ -4,8 +4,8 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from states import Registration
 from keyboards import builder
+from states import Registration
 
 router = Router()
 
