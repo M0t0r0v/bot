@@ -63,3 +63,10 @@ async def get_all_users(db: AsyncSession, page: int, page_size: int = 10):
     result = await db.execute(select(User).limit(page_size).offset(offset_value))
     # Преобразуем результат в список объектов
     return result.scalars().all()
+
+async def get_user_registered(db: AsyncSession, user_id:int) -> bool:
+    # Выполняем запрос для получения информации по пользователю
+    result = await db.execute(select(User).filter_by(telegram_id=user_id))
+    # Преобразуем результат в список объектов
+    user = result.scalar_one_or_none()
+    return user is not None

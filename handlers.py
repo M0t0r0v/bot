@@ -3,12 +3,14 @@ from aiogram.dispatcher.router import Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot import TELEGRAM_TOKEN
 from encrypt_decrypt import xor_encrypt_decrypt
-from keyboards import builder
-from models import SessionLocal, add_user, get_all_users
+from keyboards import get_keyboard
+from models import SessionLocal, add_user, get_all_users, get_user_registered
 from states import Registration
+
 
 router = Router()
 
@@ -21,9 +23,12 @@ async def get_db():
 # Обработчик команды /start
 @router.message(Command("start"))
 async def send_welcome(message: Message):
-    await message.answer(
-        "Привет! Вот мои кнопки:", reply_markup=builder.as_markup()
-    )
+    user_id = message.from_user.id
+    async for db in get_db():
+        registered = await get_user_registered(db, user_id)
+    keyboard = get_keyboard(user_id, registered)
+    await message.answer("Добро пожаловать!", reply_markup=keyboard)
+
 
 
 # Обработчик для кнопки "Регистрация"
@@ -104,18 +109,5 @@ async def print_users_with_pagination(message: Message):
                 f"Telegram ID: {user.telegram_id}\n"
                 f"Telegram Name: {xor_encrypt_decrypt(user.username, TELEGRAM_TOKEN)}\n"
                 f"Full Name: {xor_encrypt_decrypt(user.full_name, TELEGRAM_TOKEN)}\n"
-            ])
-            await message.answer(all_users)
-            
-@router.message(Command("get_user_list_source"))
-async def print_users_with_pagination(message: Message):
-    async with SessionLocal() as session:
-        users = await get_all_users(session, page=1, page_size=10)
-        for user in users:
-            all_users =  "\n".join([
-                f"User ID: {user.id}\n"
-                f"Telegram ID: {user.telegram_id}\n"
-                f"Telegram Name: {user.username}\n"
-                f"Full Name: {user.full_name}\n"
             ])
             await message.answer(all_users)
