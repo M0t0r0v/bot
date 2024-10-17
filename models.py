@@ -1,9 +1,10 @@
 import os
 
 from dotenv import load_dotenv
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import BigInteger, Column, Integer, String
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.future import select
 
 load_dotenv()
 # URL подключения к SQLite базе данных
@@ -28,6 +29,7 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
+    telegram_id: int = Column(BigInteger, unique=True, index=True)
     username = Column(String, unique=True, index=True)
     full_name = Column(String)
 
@@ -37,10 +39,27 @@ async def init_db():
         await conn.run_sync(Base.metadata.create_all)
 
 
-async def add_user(db: AsyncSession, username: str, full_name):
-    new_user = User(username=username,
-                    full_name=full_name)
+async def add_user(
+    db: AsyncSession,
+    telegram_id:int,
+    username: str,
+    full_name: str
+    ):
+
+    new_user = User(
+        telegram_id=telegram_id,
+        username=username,
+        full_name=full_name
+    )
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
     return new_user
+
+async def get_all_users(db: AsyncSession, page: int, page_size: int = 10):
+    # Вычисляем количество записей, которые нужно пропустить
+    offset_value = (page - 1) * page_size
+    # Выполняем запрос для получения всех записей из таблицы пользователей
+    result = await db.execute(select(User).limit(page_size).offset(offset_value))
+    # Преобразуем результат в список объектов
+    return result.scalars().all()

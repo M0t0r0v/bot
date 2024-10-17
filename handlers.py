@@ -7,7 +7,7 @@ from aiogram.types import Message
 from bot import TELEGRAM_TOKEN
 from encrypt_decrypt import xor_encrypt_decrypt
 from keyboards import builder
-from models import SessionLocal, add_user
+from models import SessionLocal, add_user, get_all_users
 from states import Registration
 
 router = Router()
@@ -58,6 +58,7 @@ async def get_full_name(message: Message, state: FSMContext):
     async for db in get_db():
         await add_user(
             db,
+            user_id,
             xor_encrypt_decrypt(member.user.username, TELEGRAM_TOKEN),
             xor_encrypt_decrypt(full_name, TELEGRAM_TOKEN),
         )
@@ -92,3 +93,29 @@ async def get_user_info(message: Message):
     )
 
     await message.answer(user_info)
+
+@router.message(Command("get_user_list"))
+async def print_users_with_pagination(message: Message):
+    async with SessionLocal() as session:
+        users = await get_all_users(session, page=1, page_size=10)
+        for user in users:
+            all_users =  "\n".join([
+                f"User ID: {user.id}\n"
+                f"Telegram ID: {user.telegram_id}\n"
+                f"Telegram Name: {xor_encrypt_decrypt(user.username, TELEGRAM_TOKEN)}\n"
+                f"Full Name: {xor_encrypt_decrypt(user.full_name, TELEGRAM_TOKEN)}\n"
+            ])
+            await message.answer(all_users)
+            
+@router.message(Command("get_user_list_source"))
+async def print_users_with_pagination(message: Message):
+    async with SessionLocal() as session:
+        users = await get_all_users(session, page=1, page_size=10)
+        for user in users:
+            all_users =  "\n".join([
+                f"User ID: {user.id}\n"
+                f"Telegram ID: {user.telegram_id}\n"
+                f"Telegram Name: {user.username}\n"
+                f"Full Name: {user.full_name}\n"
+            ])
+            await message.answer(all_users)
