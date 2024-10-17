@@ -6,8 +6,14 @@ from aiogram.types import Message
 
 from keyboards import builder
 from states import Registration
+from models import SessionLocal, add_user
 
 router = Router()
+
+
+async def get_db():
+    async with SessionLocal() as session:
+        yield session  # Создаём сессию
 
 
 # Обработчик команды /start
@@ -41,6 +47,13 @@ async def get_full_name(message: Message, state: FSMContext):
     surname = full_name[0]
     name = full_name[1]
     patronymic = full_name[2] if len(full_name) > 2 else ""
+
+    chat_id = message.chat.id
+    user_id = message.from_user.id
+    member = await message.bot.get_chat_member(chat_id, user_id)
+
+    async for db in get_db():
+        await add_user(db, member.user.username, ' '.join(full_name))
 
     await message.answer(
         f"Вы зарегистрированы как: {surname} {name} {patronymic}"
