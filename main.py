@@ -1,8 +1,9 @@
 import asyncio
-from bot import bot, dp
-from handlers import router
+
 from aiogram.methods.delete_webhook import DeleteWebhook
 
+from bot import bot, dp
+from handlers import router
 from models import init_db
 
 

@@ -4,9 +4,11 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
+from bot import TELEGRAM_TOKEN
+from encrypt_decrypt import xor_encrypt_decrypt
 from keyboards import builder
-from states import Registration
 from models import SessionLocal, add_user
+from states import Registration
 
 router = Router()
 
@@ -51,9 +53,14 @@ async def get_full_name(message: Message, state: FSMContext):
     chat_id = message.chat.id
     user_id = message.from_user.id
     member = await message.bot.get_chat_member(chat_id, user_id)
+    full_name = ' '.join(full_name)
 
     async for db in get_db():
-        await add_user(db, member.user.username, ' '.join(full_name))
+        await add_user(
+            db,
+            xor_encrypt_decrypt(member.user.username, TELEGRAM_TOKEN),
+            xor_encrypt_decrypt(full_name, TELEGRAM_TOKEN),
+        )
 
     await message.answer(
         f"Вы зарегистрированы как: {surname} {name} {patronymic}"

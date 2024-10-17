@@ -3,8 +3,8 @@ import os
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from dotenv import load_dotenv
-from models import SessionLocal
 
+from models import SessionLocal
 
 load_dotenv()
 
@@ -15,6 +15,5 @@ storage = MemoryStorage()  # Хранилище для состояний пол
 dp = Dispatcher(storage=storage)
 
 
-async def get_db():
-    async with SessionLocal() as session:
-        yield session  # Создаём сессию
+
+
