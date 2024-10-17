@@ -23,10 +23,10 @@ async def get_db():
 # Обработчик команды /start
 @router.message(Command("start"))
 async def send_welcome(message: Message):
-    user_id = message.from_user.id
+    telegram_id = message.from_user.id
     async for db in get_db():
-        registered = await get_user_registered(db, user_id)
-    keyboard = get_keyboard(user_id, registered)
+        registered = await get_user_registered(db, telegram_id)
+    keyboard = get_keyboard(telegram_id, registered)
     await message.answer("Добро пожаловать!", reply_markup=keyboard)
 
 
@@ -56,14 +56,14 @@ async def get_full_name(message: Message, state: FSMContext):
     patronymic = full_name[2] if len(full_name) > 2 else ""
 
     chat_id = message.chat.id
-    user_id = message.from_user.id
-    member = await message.bot.get_chat_member(chat_id, user_id)
+    telegram_id = message.from_user.id
+    member = await message.bot.get_chat_member(chat_id, telegram_id)
     full_name = ' '.join(full_name)
 
     async for db in get_db():
         await add_user(
             db,
-            user_id,
+            telegram_id,
             xor_encrypt_decrypt(member.user.username, TELEGRAM_TOKEN),
             xor_encrypt_decrypt(full_name, TELEGRAM_TOKEN),
         )
@@ -77,9 +77,9 @@ async def get_full_name(message: Message, state: FSMContext):
 # Обработчик для кнопки "Продолжить"
 @router.message(F.text == "Продолжить")
 async def login(message: Message):
-    user_id = message.from_user.id
+    telegram_id = message.from_user.id
     await message.answer(
-        f"Пользователь ID: {user_id} нажал кнопку Продолжить"
+        f"Пользователь ID: {telegram_id} нажал кнопку Продолжить"
     )
 
 
@@ -87,10 +87,11 @@ async def login(message: Message):
 @router.message(Command("get_user_info"))
 async def get_user_info(message: Message):
     chat_id = message.chat.id
-    user_id = message.from_user.id
-    member = await message.bot.get_chat_member(chat_id, user_id)
+    telegram_id = message.from_user.id
+    member = await message.bot.get_chat_member(chat_id, telegram_id)
 
     user_info = (
+        f"Chat ID: {chat_id}\n"
         f"Имя: {member.user.full_name}\n"
         f"Username: @{member.user.username}\n"
         f"ID пользователя: {member.user.id}\n"
