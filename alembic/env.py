@@ -7,6 +7,7 @@ from sqlalchemy import engine_from_config, pool
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from alembic import context
+
 from models import Base
 
 load_dotenv('.env')

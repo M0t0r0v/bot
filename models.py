@@ -1,10 +1,10 @@
 import os
 
 from dotenv import load_dotenv
-from sqlalchemy import BigInteger, Column, Integer, String, ForeignKey
+from sqlalchemy import BigInteger, Column, ForeignKey, Integer, String
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from sqlalchemy.future import select
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 load_dotenv()
 # URL подключения к SQLite базе данных
@@ -45,27 +45,29 @@ class User(Base):
     level_id = Column(Integer, ForeignKey("level.id"))
     # В кратце описание над чем работает человек
     description = Column(String)
-    
+
     # Определяем отношения с другими таблицами
     comand = relationship("Comand")
     role = relationship("Role")
     level = relationship("Level")
-    
-    
+
+
 class Comand(Base):
     __tablename__ = "command"
     id = Column(Integer, primary_key=True, index=True)
     comand_name = Column(String, unique=True)
+
 
 class Role(Base):
     __tablename__ = "role"
     id = Column(Integer, primary_key=True, index=True)
     role = Column(String, unique=True)
 
+
 class Level(Base):
     __tablename__ = "level"
     id = Column(Integer, primary_key=True, index=True)
-    level = Column(String, unique=True) 
+    level = Column(String, unique=True)
 
 
 async def init_db():
@@ -75,30 +77,43 @@ async def init_db():
 
 async def add_user(
     db: AsyncSession,
-    telegram_id:int,
+    telegram_id: int,
     username: str,
-    full_name: str
-    ):
-
+    full_name: str,
+    sber_id: int,
+    comand_id: int,
+    role_id: int,
+    level_id: int,
+    description: int,
+):
     new_user = User(
         telegram_id=telegram_id,
         username=username,
-        full_name=full_name
+        full_name=full_name,
+        sber_id=sber_id,
+        comand_id=comand_id,
+        role_id=role_id,
+        level_id=level_id,
+        description=description,
     )
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
     return new_user
 
+
 async def get_all_users(db: AsyncSession, page: int, page_size: int = 10):
     # Вычисляем количество записей, которые нужно пропустить
     offset_value = (page - 1) * page_size
     # Выполняем запрос для получения всех записей из таблицы пользователей
-    result = await db.execute(select(User).limit(page_size).offset(offset_value))
+    result = await db.execute(
+        select(User).limit(page_size).offset(offset_value)
+    )
     # Преобразуем результат в список объектов
     return result.scalars().all()
 
-async def get_user_registered(db: AsyncSession, telegram_id:int) -> bool:
+
+async def get_user_registered(db: AsyncSession, telegram_id: int) -> bool:
     # Выполняем запрос для получения информации по пользователю
     result = await db.execute(select(User).filter_by(telegram_id=telegram_id))
     # Преобразуем результат в список объектов
